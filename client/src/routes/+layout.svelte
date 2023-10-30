@@ -1,5 +1,7 @@
 <script lang="ts">
-    import {current_user} from "../stores/current_user";
-
+  export let data;
+  console.log('data', data)
+  alert()
 </script>
-<slot />
+
+  <slot />

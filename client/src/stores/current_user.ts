@@ -1,3 +1,3 @@
-import {writable} from "svelte/store";
+import { writable } from 'svelte/store';
 
-export const current_user = writable(null)
+export const current_user = writable(null);

@@ -3,10 +3,23 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			authedUser: googleData | undefined | null;
+		}
 		// interface PageData {}
 		// interface Platform {}
 	}
+}
+
+interface googleData {
+	sub?: string;
+	name?: string;
+	given_name?: string;
+	family_name?: string;
+	picture?: string;
+	email?: string;
+	email_verified?: boolean;
+	locale?: string;
 }
 
 export {};

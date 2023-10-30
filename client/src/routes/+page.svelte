@@ -1,15 +1,19 @@
 <script lang="ts">
-   import {current_user} from "../stores/current_user";
-   import { goto } from '$app/navigation';
-   import {onMount} from "svelte";
-   let isLoggedIn: boolean
-   $: {
-       isLoggedIn = $current_user !== null
-   }
+  import { redirect } from "@sveltejs/kit";
+  import { current_user } from "../stores/current_user";
+  export let data;
+
+  $: {
+    const user_data = data?.authedUser;
+    if (user_data) {
+      current_user.set(user_data);
+    }
+  }
+
 </script>
 
-{#if isLoggedIn}
-    <p> Hello {$current_user}</p>
-    {:else}
-    {goto('/signup')}
+{#if data.authedUser}
+  <p>Hello {$current_user.name}</p>
+{:else}
+  <p>curious</p>
 {/if}

@@ -1,43 +1,41 @@
-import {redirect} from '@sveltejs/kit';
-import {OAuth2Client} from 'google-auth-library';
-import {GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET} from "$env/static/private";
-import {current_user} from "../../stores/current_user";
+import { redirect } from '@sveltejs/kit';
+import { OAuth2Client } from 'google-auth-library';
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from '$env/static/private';
+export const GET = async ({ url, cookies }) => {
+	const redirectURL = 'http://localhost:3000/oauth';
+	const code = url.searchParams.get('code');
+	try {
+		const authClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, redirectURL);
 
-async function getUserData(access_token) {
+		if (code !== null) {
+			const r = await authClient.getToken(code);
+			authClient.setCredentials(r.tokens);
+			const user: OAuth2Client['credentials'] = authClient.credentials;
 
-    const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`);
-    console.log('response',response);
-    const data = await response.json();
-    console.log(data)
-    current_user.set(data)
-}
+			if (!user.access_token) {
+				throw new Error('Access token is missing.');
+			}
 
+			// Save the access token to a cookie
+			cookies.set('authToken', user.access_token, {
+				httpOnly: true,
+				maxAge: 60 * 60 * 24,
+				sameSite: 'strict'
+			});
 
-export const GET = async ({ url}) => {
-    const redirectURL = 'http://localhost:3000/oauth';
-    const code = await url.searchParams.get('code');
-
-    console.log('returned code',code)
-
-    try {
-        const oAuth2Client = new OAuth2Client(
-            GOOGLE_CLIENT_ID,
-            GOOGLE_CLIENT_SECRET,
-            redirectURL
-        );
-        const r = await oAuth2Client.getToken(code);
-        // Make sure to set the credentials on the OAuth2 client.
-        oAuth2Client.setCredentials(r.tokens);
-        console.info('Tokens acquired.');
-        const user = oAuth2Client.credentials;
-        console.log('credentials',user);
-
-        await getUserData(user.access_token);
-
-
-    } catch (err) {
-        console.log('Error logging in with OAuth2 user', err);
-    }
-
-    throw redirect(303, '/');
+			// Check if a refresh token exists and save it to a separate cookie
+			if (user.refresh_token) {
+				cookies.set('refreshToken', user.refresh_token, {
+					httpOnly: true,
+					maxAge: 60 * 60 * 24 * 30, // Adjust the expiration time as needed
+					sameSite: 'strict'
+				});
+			}
+		} else {
+			throw new Error('Access token is missing.');
+		}
+	} catch (err) {
+		console.error('Error logging in with OAuth2 user', err);
+	}
+	throw redirect(303, '/');
 };
